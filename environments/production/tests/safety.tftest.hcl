@@ -7,7 +7,7 @@ run "ecs_runtime_guards" {
   }
   variables {
     name                   = "test-frontend"
-    aws_region             = "ap-southeast-2"
+    aws_region             = "ap-northeast-2"
     subnet_ids             = ["subnet-12345678", "subnet-87654321"]
     security_group_id      = "sg-12345678"
     execution_role_arn     = "arn:aws:iam::123456789012:role/execution"
@@ -22,13 +22,13 @@ run "ecs_runtime_guards" {
     enable_execute_command = false
     tags                   = {}
     secret_arns = {
-      SESSION_ENCRYPTION_KEY             = "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:session"
-      OBSERVABILITY_METRICS_ENABLED      = "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:enabled"
-      OBSERVABILITY_METRICS_BEARER_TOKEN = "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:metrics"
-      GRAFANA_PROM_URL                   = "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:url"
-      GRAFANA_PROM_USER                  = "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:user"
-      GRAFANA_TOKEN                      = "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:token"
-      CLOUDFLARE_TUNNEL_TOKEN            = "arn:aws:secretsmanager:ap-southeast-2:123456789012:secret:tunnel"
+      SESSION_ENCRYPTION_KEY             = "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:session"
+      OBSERVABILITY_METRICS_ENABLED      = "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:enabled"
+      OBSERVABILITY_METRICS_BEARER_TOKEN = "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:metrics"
+      GRAFANA_PROM_URL                   = "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:url"
+      GRAFANA_PROM_USER                  = "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:user"
+      GRAFANA_TOKEN                      = "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:token"
+      CLOUDFLARE_TUNNEL_TOKEN            = "arn:aws:secretsmanager:ap-northeast-2:123456789012:secret:tunnel"
     }
   }
   assert {

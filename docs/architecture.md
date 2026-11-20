@@ -2,10 +2,10 @@
 
 ## 리전과 state
 
-현재 Fresh Canvas 계정은 프로젝트형 가입으로 생성돼 시드니(`ap-southeast-2`)에 고정되어 있다.
-따라서 `environments/production` state는 시드니만 관리한다. 서울 Advanced 계정으로 옮길 때는
-같은 모듈을 복사하지 않고, 서울 provider와 별도 S3 state key를 둔 environment를 추가한다.
-두 계정의 state를 합치거나 import하지 않는다.
+Fresh Canvas 계정은 Advanced 기능을 활성화했다. 운영 워크로드 provider는 서울(`ap-northeast-2`)을
+사용한다. 기존 시드니(`ap-southeast-2`) S3 bucket은 이미 생성된 Terraform state 저장소로만 남기고,
+production state key는 `seoul/production/terraform.tfstate`로 분리한다. state bucket의 리전과
+워크로드 리전은 독립적이므로, 이를 위해 서비스 리소스를 시드니에 만들지는 않는다.
 
 ## 모듈별 책임
 
@@ -16,7 +16,7 @@
 | `modules/registry` | immutable ECR, scan on push, 종류별 10개 보존 규칙 preview | 자동 삭제 기본 off. 실행/롤백 digest 보호 절차 검증 후에만 활성화한다. |
 | `modules/secrets` | Secrets Manager secret **컨테이너** 7개 | 기존 5개 + Tunnel/metrics 인증 token. 값은 별도 주입한다. |
 | `modules/iam` | task execution/task/GitHub OIDC roles | runtime·CI 권한을 분리하고 장기 access key를 만들지 않는다. |
-| `modules/ecs` | CloudWatch log group, ECS cluster, ARM64 Fargate Spot task/service | Next.js, Alloy, cloudflared가 한 task에서 localhost 통신한다. Spot 2개, rolling 100/200, rollback circuit breaker를 사용한다. |
+| `modules/ecs` | CloudWatch log group, ECS cluster, ARM64 Fargate Spot task/service | Next.js, Alloy, cloudflared가 한 task에서 localhost 통신한다. 평상시 Spot 1개, rolling 100/200(배포 중 최대 2개), rollback circuit breaker를 사용한다. |
 | `modules/delivery` | private S3 static bucket, CloudFront OAC/distribution | 기존 static CloudFront와 병렬 검증한 뒤 `static` DNS만 전환한다. |
 
 ## IAM 경계
@@ -52,10 +52,16 @@ immutable image tag로 task definition revision을 등록해 service를 업데�
 
 1. bootstrap apply → state bucket 생성
 2. production backend 설정 후 `desired_count = 0`으로 apply
-3. Secrets Manager 7개 값 주입 → task 수 0 확인 → 수동 `cd-sydney`로 이미지 push 및 revision 연결
-4. `desired_count = 2` apply → 임시 hostname Tunnel 검증
+3. Secrets Manager 7개 값 주입 → task 수 0 확인 → 수동 `cd-seoul`로 이미지 push 및 revision 연결
+4. `desired_count = 1` apply → 임시 hostname Tunnel 검증
 5. Cloudflare DNS 전환 후 48시간 관찰
 
 Container Insights는 비용 절감을 위해 off. Alloy는 기존 메모리 상한/재시작 정책을 유지한다.
 Spot 클러스터 연결·로그 그룹·IAM 정책이 준비된 뒤에 서비스가 생성된다.
 세부 승인 지점과 남은 실제 검증은 [실행 순서](preflight-runbook.md)를 따른다.
+
+운영 task 목표는 1개지만 배치 후보 public subnet은 2개를 유지한다. 평상시 공인 IPv4는 1개이며
+배포 중에는 새 task의 IP가 일시적으로 추가된다. 롤링 배포는 새 task를 먼저 시작하므로 계획된
+중단은 필수가 아니다. 다만 현재 ECS health check는 Tunnel 연결을 확인하지 않으며, 실제 무중단은
+외부 요청으로 검증해야 한다. Spot 회수/장애 시에는 대체 task와 Tunnel이 준비될 때까지 중단될 수
+있고, Spot 용량 부족이 지속되면 중단 시간도 길어질 수 있다.

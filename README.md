@@ -1,7 +1,7 @@
 # chaeso-zip-frontend-infra
 
-채소ZIP 프론트엔드 운영 인프라를 Terraform으로 관리하는 저장소입니다. 최초 환경은
-시드니(`ap-southeast-2`)이며, 서울 이전 시에는 같은 모듈을 별도 state로 적용합니다.
+채소ZIP 프론트엔드 운영 인프라를 Terraform으로 관리하는 저장소입니다. 운영 워크로드는
+서울(`ap-northeast-2`)에 생성합니다. 기존 시드니 S3 state bucket은 Terraform 메타데이터만 보관합니다.
 
 이 저장소는 네트워크, ECR, ECS, IAM/OIDC, CloudWatch, S3·CloudFront와 ECS 서비스 기반을
 관리합니다. 애플리케이션 소스와 컨테이너 이미지 빌드·배포는
@@ -29,13 +29,13 @@ ECS service는 인프라 bootstrap 뒤 app 저장소의 task definition revision
 3. production apply는 `desired_count = 0`으로 시작한다.
 4. 출력된 7개 Secrets Manager 컨테이너에 기존 값 5개, Tunnel token, metrics 인증 token을 주입한다.
 5. app 저장소 CI로 새 ECR에 Next.js·Alloy 이미지를 push하고, task definition을 등록한다.
-6. `desired_count = 2`로 변경해 Spot 태스크 2개를 기동한다.
+6. `desired_count = 1`로 변경해 Spot 태스크 1개를 기동한다. 롤링 배포 중에는 최대 2개까지 허용한다.
 7. 임시 hostname 검증 뒤에만 Cloudflare DNS를 전환한다.
 
 `terraform.tfvars`와 state 파일은 커밋하지 않습니다. Cloudflare Tunnel과 DNS는 Terraform이 아닌
 Cloudflare Dashboard에서 별도 검증·승인 흐름으로 관리합니다.
 
-구체적인 명령·계정 인증·시드니 수동 배포 설정·스크린샷 시점은
+구체적인 명령·계정 인증·서울 수동 배포 설정·스크린샷 시점은
 [적용 전 점검 및 실행 순서](docs/preflight-runbook.md)를 따릅니다.
 이미지 자동 삭제는 기본 비활성화입니다. 앱/Alloy 각각 10개 보존 규칙의 preview를 제공하지만,
 현재 실행 및 롤백 digest 보호 절차를 확정하기 전에는 활성화하지 않습니다.

@@ -3,17 +3,15 @@ variable "aws_account_id" {
   description = "Target AWS account ID. Kept outside version control."
 }
 
-# Fresh Canvas 프로젝트형 계정의 고정 리전이 시드니이므로, 서울 Advanced 계정으로
-# 재이전하기 전까지 이 state는 시드니 리소스만 관리한다. 서울은 별도 state를 만든다.
 variable "aws_region" {
   type        = string
-  description = "Initial temporary region is Sydney; Seoul will use a separate state."
-  default     = "ap-southeast-2"
+  description = "Production workload region. Seoul is selected to minimize latency for Korean users."
+  default     = "ap-northeast-2"
 }
 
 variable "availability_zones" {
   type    = list(string)
-  default = ["ap-southeast-2a", "ap-southeast-2b"]
+  default = ["ap-northeast-2a", "ap-northeast-2b"]
 }
 
 variable "vpc_cidr" {
@@ -49,7 +47,7 @@ variable "cloudflared_image" {
 variable "desired_count" {
   type        = number
   default     = 0
-  description = "Set to 0 during bootstrap until secret values and images are ready."
+  description = "Keep 0 during bootstrap; reviewed steady-state target is 1 after secrets, images and Tunnel are ready."
 }
 
 variable "enable_image_expiration" {

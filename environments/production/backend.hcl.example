@@ -1,6 +1,7 @@
 # Copy to backend.hcl after bootstrap review. Never put credentials in this file.
 bucket              = "REPLACE_WITH_BOOTSTRAP_STATE_BUCKET"
-key                 = "sydney/production/terraform.tfstate"
+# The existing state bucket remains in Sydney; only the workload is in Seoul.
+key                 = "seoul/production/terraform.tfstate"
 region              = "ap-southeast-2"
-profile             = "chaeso-sydney"
+profile             = "chaeso-seoul"
 allowed_account_ids = ["REPLACE_WITH_TARGET_ACCOUNT_ID"]

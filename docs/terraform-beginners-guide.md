@@ -45,9 +45,9 @@ cloudflared 컨테이너 ───── localhost:3000 ─────> Next.js
 Fargate Spot task (동일 task 안에 컨테이너 3개)
 ```
 
-초기 기본값은 `desired_count = 0`이다. 검증 후 `2`로 바꾸면 위 task가 **2개** 실행된다. ECS가 두 AZ에
-분산하도록 구성하지만 Spot 용량 상황 때문에 항상 AZ별 한 개를 보장하지는 않는다. 따라서 컨테이너는
-Next.js·Alloy·cloudflared가 각각 2개씩, 총 6개가 된다. `cloudflared`는 ECS가 자동 제공하는 기능이
+초기 기본값은 `desired_count = 0`이다. 준비 후 승인받아 `1`로 바꾸면 위 task가 **1개** 실행된다.
+두 AZ의 subnet은 배치 후보로 유지하며, 평상시 task는 그중 한 곳에 배치된다. 컨테이너는
+Next.js·Alloy·cloudflared가 각각 1개씩, 총 3개다. 롤링 배포 중에는 task가 최대 2개가 된다. `cloudflared`는 ECS가 자동 제공하는 기능이
 아니다. task definition에 명시적으로 넣은 일반 컨테이너이며, Secrets Manager에서 Tunnel token을 읽어
 실행된다.
 
@@ -56,7 +56,7 @@ Next.js·Alloy·cloudflared가 각각 2개씩, 총 6개가 된다. `cloudflared`
 ```text
 chaeso-zip-frontend-infra/
 ├── bootstrap/                         # state 보관용 S3를 한 번 먼저 만든다
-├── environments/production/           # “시드니 운영”을 조립하는 곳
+├── environments/production/           # “서울 운영”을 조립하는 곳
 │   ├── main.tf                         # module들을 연결한다
 │   ├── variables.tf                    # 바꿀 수 있는 입력과 기본값
 │   └── terraform.tfvars.example        # 실제 tfvars의 안전한 견본
@@ -100,7 +100,7 @@ bootstrap/                                      environments/production/
 
 > production에는 암호화와 `use_lockfile = true`가 설정된 S3 backend 블록을 준비했다. 실제 bucket과
 > 계정은 아직 연결하지 않았다. bootstrap state는 처음에는 로컬에 생기므로 안전하게 백업하고,
-> 생성한 S3의 별도 `sydney/bootstrap/terraform.tfstate` key로 옮기는 절차를 실행 순서에 명시했다.
+> 생성한 S3의 별도 `sydney/bootstrap/terraform.tfstate` key로 옮기는 절차를 실행 순서에 명시했다. 이 버킷은 state 전용이며, 운영 워크로드는 서울 리전에 생성한다.
 
 ## 5. production은 모듈을 어떻게 연결하는가
 
@@ -138,11 +138,12 @@ AWS 콘솔에서 비용/자원을 찾거나 나중에 정리할 때 기준이 �
 ```text
 VPC 10.42.0.0/16
 │
-├── public subnet (ap-southeast-2a)
-│     └── Fargate task #1: public IP 있음, inbound 없음
-└── public subnet (ap-southeast-2b)
-      └── Fargate task #2: public IP 있음, inbound 없음
+├── public subnet (ap-northeast-2a)
+│     └── 운영 task 배치 후보: public IP 있음, inbound 없음
+└── public subnet (ap-northeast-2b)
+      └── 운영 task 배치 후보: public IP 있음, inbound 없음
 
+평상시 두 subnet 중 한 곳에 task 1개; 롤링 배포 중에는 최대 2개
 두 subnet → route table → Internet Gateway → 인터넷
 ```
 
@@ -252,12 +253,11 @@ sub = repo:YAPP-Github/28th-Web-Team-4-FE:ref:refs/heads/main
 
 ```text
 ECS cluster: chaeso-zip-frontend
-└── ECS service (desired_count = 2, FARGATE_SPOT)
-    ├── task #1 (ARM64, 0.25 vCPU / 1 GiB)
-    │   ├── nextjs       CPU 160 / memory reservation 384 MiB, :3000
-    │   ├── alloy        CPU 48  / memory reservation 128 MiB
-    │   └── cloudflared  CPU 48  / memory reservation 128 MiB
-    └── task #2 (동일 구성, 다른 AZ 가능)
+└── ECS service (desired_count = 1, FARGATE_SPOT)
+    └── task #1 (ARM64, 0.25 vCPU / 1 GiB)
+        ├── nextjs       CPU 160 / memory reservation 384 MiB, :3000
+        ├── alloy        CPU 48  / memory reservation 128 MiB
+        └── cloudflared  CPU 48  / memory reservation 128 MiB
 ```
 
 task definition은 세 컨테이너가 같은 task network namespace에서 실행되게 한다. 그래서 cloudflared와
@@ -268,8 +268,8 @@ Alloy는 Next.js를 `127.0.0.1:3000`으로 부를 수 있다. 외부 DNS나 ALB�
 | `cpu = 256`, `memory = 1024` | task 전체 크기 | Fargate의 0.25 vCPU / 1 GiB 조합 |
 | `ARM64` | Graviton 아키텍처 | 기존 운영 구성과 일치, image도 ARM64여야 함 |
 | `FARGATE_SPOT` | 남는 Fargate 용량을 할인받아 사용 | 비용 절감, 중단 가능성 대비가 필요 |
-| `desired_count = 2` | task 두 개 유지 | 한 task 중단 시 서비스 유지 확률 증가 |
-| `minimum_healthy = 100`, `maximum = 200` | 롤링 배포 중 기존 2개 유지, 최대 4개까지 | 새 revision이 정상일 때만 교체 |
+| `desired_count = 1` | 평상시 task 한 개 유지 | 비용 절감, Spot 회수/장애 시 대체 task 준비까지 중단 가능 |
+| `minimum_healthy = 100`, `maximum = 200` | 롤링 배포 중 기존 1개 유지, 최대 2개까지 | 새 task를 먼저 시작, Tunnel 준비는 별도 검증 필요 |
 | circuit breaker + rollback | 새 task가 시작 실패하면 | ECS가 실패 배포를 되돌림 |
 | `ignore_changes = [task_definition]` | 앱 CD가 올린 revision을 Terraform이 무시 | 다음 infra apply가 배포 이미지를 옛것으로 되돌리지 않음 |
 
@@ -316,10 +316,10 @@ variables.tf                 terraform.tfvars (로컬/CI 안전한 주입)
 "처음에는 0"          +     desired_count = 0
 ```
 
-시드니인 이유는 코드 편의가 아니라 **Fresh Canvas 프로젝트형 AWS 계정이 시드니에 고정**되어 있기
-때문이다. 이 state가 서울 리소스를 함께 관리하지 않도록 `aws_region` 주석과 문서로 명시했다. 서울
-Advanced 계정으로 옮길 때는 같은 state의 `aws_region`만 바꾸지 않는다. 서울용 environment/state를 새로
-만들고, 시드니와 병렬 검증 후 DNS를 전환한다.
+Fresh Canvas 계정에서 Advanced 기능을 활성화했으므로, 운영 provider는 한국 사용자 지연 시간을 줄이기
+위해 서울(`ap-northeast-2`)을 사용한다. 기존 시드니 state bucket은 Terraform 메타데이터 전용이다.
+state bucket의 리전이 워크로드 리전을 정하지 않으므로, 같은 bucket 안에서도 서울용 production key를
+분리해 사용할 수 있다.
 
 ## 8. GitHub Actions는 무엇을 검사하는가
 
@@ -363,11 +363,11 @@ GitHub Actions는 검증한 패치 버전인 `1.17.1`을 설치한다. 같은 mi
        ↓
 3. Doppler 원본을 기준으로 secret 값 7개 주입 (빈 token 금지)
        ↓
-4. 수동 cd-sydney로 ARM64 image push 및 service revision 연결 (task 수 0 확인 후 실행)
+4. 수동 cd-seoul로 ARM64 image push 및 service revision 연결 (task 수 0 확인 후 실행)
        ↓
 5. Cloudflare named Tunnel 생성, token을 secret에 주입
        ↓
-6. desired_count=2 plan/apply
+6. desired_count=1 plan/apply
        ↓
 7. 임시 hostname으로 health/Tunnel/로그 검증
        ↓
