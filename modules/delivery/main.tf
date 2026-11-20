@@ -39,6 +39,9 @@ resource "aws_cloudfront_distribution" "static" {
     target_origin_id = "static-s3"
     compress         = true
 
+    # AWS-managed CORS-With-Preflight policy, also used by the previous distribution.
+    response_headers_policy_id = "5cc3b908-e619-4b99-88e5-2cf7f45965bd"
+
     viewer_protocol_policy = "redirect-to-https"
 
     forwarded_values {
