@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.10.0"
+  required_version = "~> 1.17.0"
 
   required_providers {
     aws = {
@@ -8,8 +8,11 @@ terraform {
     }
   }
 
-  # Apply 시 bootstrap에서 만든 S3 backend를 설정한다. backend 값은 tfvars에 넣지 않는다.
-  # backend "s3" {}
+  # Bucket/account/profile are supplied by an ignored backend.hcl after bootstrap review.
+  backend "s3" {
+    encrypt      = true
+    use_lockfile = true
+  }
 }
 
 provider "aws" {

@@ -5,3 +5,7 @@
 *.tfvars.json
 crash.log
 crash.*.log
+backend.hcl
+*.tfplan
+*.tfplan.json
+.DS_Store

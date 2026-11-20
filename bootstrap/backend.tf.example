@@ -1,0 +1,8 @@
+# Only copy to backend.tf AFTER the first local bootstrap apply and state backup.
+# Then: terraform init -migrate-state -backend-config=backend.hcl
+terraform {
+  backend "s3" {
+    encrypt      = true
+    use_lockfile = true
+  }
+}

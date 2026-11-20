@@ -1,0 +1,6 @@
+# Copy to backend.hcl after bootstrap review. Never put credentials in this file.
+bucket              = "REPLACE_WITH_BOOTSTRAP_STATE_BUCKET"
+key                 = "sydney/production/terraform.tfstate"
+region              = "ap-southeast-2"
+profile             = "chaeso-sydney"
+allowed_account_ids = ["REPLACE_WITH_TARGET_ACCOUNT_ID"]

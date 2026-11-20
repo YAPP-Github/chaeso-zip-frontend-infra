@@ -80,6 +80,7 @@ data "aws_iam_policy_document" "github_actions" {
   statement {
     actions = [
       "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
       "ecr:CompleteLayerUpload",
       "ecr:InitiateLayerUpload",
       "ecr:PutImage",
@@ -105,17 +106,25 @@ data "aws_iam_policy_document" "github_actions" {
 
   statement {
     actions = [
-      "ecs:DescribeServices",
       "ecs:DescribeTaskDefinition",
       "ecs:RegisterTaskDefinition",
-      "ecs:UpdateService",
     ]
     resources = ["*"]
   }
 
   statement {
+    actions   = ["ecs:DescribeServices", "ecs:UpdateService"]
+    resources = [var.ecs_service_arn]
+  }
+
+  statement {
     actions   = ["iam:PassRole"]
     resources = [aws_iam_role.execution.arn, aws_iam_role.task.arn]
+    condition {
+      test     = "StringEquals"
+      variable = "iam:PassedToService"
+      values   = ["ecs-tasks.amazonaws.com"]
+    }
   }
 }
 

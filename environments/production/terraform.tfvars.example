@@ -1,9 +1,10 @@
 aws_account_id = "123456789012"
 
 # Build and push these immutable images before the first ECS apply.
-app_image   = "123456789012.dkr.ecr.ap-southeast-2.amazonaws.com/chaeso-zip-frontend:<git-sha>"
+app_image   = "123456789012.dkr.ecr.ap-southeast-2.amazonaws.com/chaeso-zip-frontend:app-<git-sha>"
 alloy_image = "123456789012.dkr.ecr.ap-southeast-2.amazonaws.com/chaeso-zip-frontend:alloy-<git-sha>"
 cloudflared_image = "cloudflare/cloudflared:<verified-version-or-digest>"
 
-# Start with 0, manually seed the six Secrets Manager values, then change to 2.
+# Start with 0, seed seven Secrets Manager values, then change to 2 after review.
 desired_count = 0
+enable_image_expiration = false

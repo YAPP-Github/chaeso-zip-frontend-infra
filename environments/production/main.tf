@@ -20,8 +20,9 @@ module "network" {
 module "registry" {
   source = "../../modules/registry"
 
-  name = local.name
-  tags = local.tags
+  name                    = local.name
+  enable_image_expiration = var.enable_image_expiration
+  tags                    = local.tags
 }
 
 module "secrets" {
@@ -31,6 +32,7 @@ module "secrets" {
   secret_names = toset([
     "SESSION_ENCRYPTION_KEY",
     "OBSERVABILITY_METRICS_ENABLED",
+    "OBSERVABILITY_METRICS_BEARER_TOKEN",
     "GRAFANA_PROM_URL",
     "GRAFANA_PROM_USER",
     "GRAFANA_TOKEN",
@@ -48,7 +50,7 @@ module "iam" {
   ecr_repository_arn   = module.registry.repository_arn
   static_bucket_arn    = module.delivery.bucket_arn
   secrets_manager_arns = values(module.secrets.arns)
-  log_group_arns       = ["*"] # CloudWatch log group ARN은 ECS module에서 생성한다.
+  ecs_service_arn      = "arn:aws:ecs:${var.aws_region}:${var.aws_account_id}:service/${local.name}/${local.name}"
   tags                 = local.tags
 }
 
@@ -63,6 +65,8 @@ module "delivery" {
 
 module "ecs" {
   source = "../../modules/ecs"
+  # Role ARN references alone do not wait for permission attachments.
+  depends_on = [module.iam]
 
   name                   = local.name
   aws_region             = var.aws_region

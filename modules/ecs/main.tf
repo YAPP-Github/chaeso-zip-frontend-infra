@@ -21,6 +21,7 @@ locals {
       secrets = [
         { name = "SESSION_ENCRYPTION_KEY", valueFrom = var.secret_arns["SESSION_ENCRYPTION_KEY"] },
         { name = "OBSERVABILITY_METRICS_ENABLED", valueFrom = var.secret_arns["OBSERVABILITY_METRICS_ENABLED"] },
+        { name = "OBSERVABILITY_METRICS_BEARER_TOKEN", valueFrom = var.secret_arns["OBSERVABILITY_METRICS_BEARER_TOKEN"] },
       ]
       healthCheck = {
         command     = ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/internal/health >/dev/null || exit 1"]
@@ -46,10 +47,17 @@ locals {
       essential         = false
       cpu               = 48
       memoryReservation = 128
+      memory            = 256
+      environment       = [{ name = "GOMEMLIMIT", value = "192MiB" }]
+      restartPolicy = {
+        enabled              = true
+        restartAttemptPeriod = 60
+      }
       secrets = [
         { name = "GRAFANA_PROM_URL", valueFrom = var.secret_arns["GRAFANA_PROM_URL"] },
         { name = "GRAFANA_PROM_USER", valueFrom = var.secret_arns["GRAFANA_PROM_USER"] },
         { name = "GRAFANA_TOKEN", valueFrom = var.secret_arns["GRAFANA_TOKEN"] },
+        { name = "OBSERVABILITY_METRICS_BEARER_TOKEN", valueFrom = var.secret_arns["OBSERVABILITY_METRICS_BEARER_TOKEN"] },
       ]
       dependsOn = [{ containerName = "nextjs", condition = "HEALTHY" }]
       logConfiguration = {
@@ -97,7 +105,7 @@ resource "aws_ecs_cluster" "this" {
 
   setting {
     name  = "containerInsights"
-    value = "enabled"
+    value = "disabled"
   }
 
   tags = var.tags
@@ -121,7 +129,14 @@ resource "aws_ecs_task_definition" "this" {
   tags = var.tags
 }
 
+resource "aws_ecs_cluster_capacity_providers" "this" {
+  cluster_name       = aws_ecs_cluster.this.name
+  capacity_providers = ["FARGATE_SPOT"]
+}
+
 resource "aws_ecs_service" "this" {
+  depends_on = [aws_ecs_cluster_capacity_providers.this, aws_cloudwatch_log_group.this]
+
   name            = var.name
   cluster         = aws_ecs_cluster.this.id
   task_definition = aws_ecs_task_definition.this.arn

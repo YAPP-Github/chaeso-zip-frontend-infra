@@ -26,3 +26,10 @@ output "runtime_secret_arns" {
   value     = module.secrets.arns
   sensitive = true
 }
+output "image_expiration_policy_preview" {
+  value = module.registry.expiration_policy_preview
+}
+
+output "initial_task_definition_arn" {
+  value = module.ecs.task_definition_arn
+}

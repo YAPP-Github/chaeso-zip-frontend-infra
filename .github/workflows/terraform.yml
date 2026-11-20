@@ -2,18 +2,8 @@ name: terraform
 
 on:
   pull_request:
-    paths:
-      - "bootstrap/**"
-      - "environments/**"
-      - "modules/**"
-      - ".github/workflows/terraform.yml"
   push:
     branches: [main]
-    paths:
-      - "bootstrap/**"
-      - "environments/**"
-      - "modules/**"
-      - ".github/workflows/terraform.yml"
 
 permissions:
   contents: read
@@ -31,7 +21,10 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: 1.10.5
+          terraform_version: 1.17.1
       - run: terraform fmt -check -recursive
-      - run: terraform init -backend=false
+        working-directory: .
+      - run: terraform init -backend=false -lockfile=readonly -input=false
       - run: terraform validate
+      - run: terraform test
+        if: matrix.directory == 'environments/production'
