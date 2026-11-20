@@ -1,0 +1,16 @@
+variable "name" { type = string }
+variable "aws_region" { type = string }
+variable "subnet_ids" { type = list(string) }
+variable "security_group_id" { type = string }
+variable "execution_role_arn" { type = string }
+variable "task_role_arn" { type = string }
+variable "app_image" { type = string }
+variable "alloy_image" { type = string }
+variable "cloudflared_image" { type = string }
+variable "secret_arns" { type = map(string) }
+variable "desired_count" { type = number }
+variable "task_cpu" { type = number }
+variable "task_memory" { type = number }
+variable "bff_allowed_origins" { type = string }
+variable "enable_execute_command" { type = bool }
+variable "tags" { type = map(string) }
