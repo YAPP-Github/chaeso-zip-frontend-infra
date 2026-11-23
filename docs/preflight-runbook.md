@@ -44,10 +44,13 @@ terraform -chdir=bootstrap output state_bucket_name
 계정별 `backend.hcl`과 `terraform.tfvars`를 준비해 `init -backend-config=backend.hcl`로 연결한다.
 이미 생성한 버킷을 다시 bootstrap하거나 빈 로컬 state를 원격으로 이전하지 않는다.
 
+`bootstrap/terraform.tfvars.example`을 복사한 뒤, 서울 리전과 이미 생성한 state bucket 이름을
+명시한다. state bucket은 전역적으로 이름이 유일해야 하므로 `bucket_prefix`로 자동 생성하지 않는다.
+
 아래는 이번에 완료한 최초 이전 절차의 기록이다. 첫 bootstrap은 로컬 state를 사용한다. 버킷 생성 후 `bootstrap/terraform.tfstate`를 안전한 위치에
 백업하고, `bootstrap/backend.tf.example`을 `bootstrap/backend.tf`로 복사한다. production의
-`backend.hcl.example` 형식을 사용하되 key는 반드시 `sydney/bootstrap/terraform.tfstate`로 바꾼다.
-bucket/profile/account는 같은 새 계정 값으로 설정한다.
+`backend.hcl.example` 형식을 사용하되 key는 반드시 `seoul/bootstrap/terraform.tfstate`로 바꾼다.
+bucket/profile/account/region은 같은 새 서울 계정 값으로 설정한다.
 
 ```sh
 terraform -chdir=bootstrap init -migrate-state -backend-config=backend.hcl

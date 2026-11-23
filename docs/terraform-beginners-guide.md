@@ -100,7 +100,7 @@ bootstrap/                                      environments/production/
 
 > production에는 암호화와 `use_lockfile = true`가 설정된 S3 backend 블록을 준비했다. 실제 bucket과
 > 계정은 아직 연결하지 않았다. bootstrap state는 처음에는 로컬에 생기므로 안전하게 백업하고,
-> 생성한 S3의 별도 `sydney/bootstrap/terraform.tfstate` key로 옮기는 절차를 실행 순서에 명시했다. 이 버킷은 state 전용이며, 운영 워크로드는 서울 리전에 생성한다.
+> 생성한 서울 S3의 별도 `seoul/bootstrap/terraform.tfstate` key로 옮기는 절차를 실행 순서에 명시했다. 이 버킷은 state 전용이며, 운영 워크로드와 같은 서울 리전에 생성한다.
 
 ## 5. production은 모듈을 어떻게 연결하는가
 

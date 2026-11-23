@@ -1,0 +1,3 @@
+aws_account_id  = "REPLACE_WITH_TARGET_ACCOUNT_ID"
+aws_region      = "ap-northeast-2"
+state_bucket_name = "REPLACE_WITH_GLOBALLY_UNIQUE_SEOUL_STATE_BUCKET"
