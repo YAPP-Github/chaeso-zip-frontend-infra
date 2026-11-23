@@ -3,9 +3,9 @@
 ## 리전과 state
 
 Fresh Canvas 계정은 Advanced 기능을 활성화했다. 운영 워크로드 provider는 서울(`ap-northeast-2`)을
-사용한다. 기존 시드니(`ap-southeast-2`) S3 bucket은 이미 생성된 Terraform state 저장소로만 남기고,
-production state key는 `seoul/production/terraform.tfstate`로 분리한다. state bucket의 리전과
-워크로드 리전은 독립적이므로, 이를 위해 서비스 리소스를 시드니에 만들지는 않는다.
+사용한다. Terraform state도 서울 S3 bucket에서 관리하며, production state key는
+`seoul/production/terraform.tfstate`로 분리한다. bootstrap과 production은 같은 bucket을 쓰되 서로
+다른 key를 사용한다.
 
 ## 모듈별 책임
 

@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "terraform_state" {
-  bucket_prefix = "${var.name}-tfstate-"
+  bucket = var.state_bucket_name
 
   lifecycle {
     prevent_destroy = true
